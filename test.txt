@@ -1,0 +1,50 @@
+awslocal s3 ls
+awslocal dynamodb list-tables
+awslocal sqs list-queues
+awslocal lambda list-functions
+awslocal apigateway get-rest-apis
+awslocal apigateway get-resources --rest-api-id $API_ID
+
+
+awslocal lambda invoke `
+    --function-name ingest `
+    --payload file://payload.json `
+    response.json
+
+
+
+
+
+$headers = @{ "Content-Type" = "application/json" }
+$body = '{ "body": "{ \"name\": \"Alice\", \"action\": \"run-demo\" }" }'
+
+Invoke-RestMethod -Uri "http://localhost:4566/restapis/$API_ID/local/_user_request_/ingest" `
+                  -Method POST `
+                  -Headers $headers `
+                  -Body $body
+
+
+
+Invoke-RestMethod -Uri "http://localhost:4566/restapis/z4u1znze6c/local/_user_request_/ingest" `
+                  -Method POST `
+                  -Headers $headers `
+                  -Body $body
+
+
+
+awslocal dynamodb scan --table-name IncomingRequests
+
+awslocal dynamodb scan --table-name ProcessedRequests
+
+
+
+awslocal sqs receive-message --queue-url $QUEUE_URL
+
+
+
+awslocal s3 ls s3://demo-reports/reports/
+awslocal s3 cp s3://demo-reports/reports/<uuid>.json .
+
+
+
+awslocal s3 rm s3://terraform-demo-reports --recursive
